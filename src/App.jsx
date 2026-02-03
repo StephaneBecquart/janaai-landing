@@ -778,12 +778,7 @@ export default function JanaAILanding() {
               }}
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
-                J
-              </div>
-              <span className="text-xl md:text-2xl font-bold tracking-tight">
-                Jana<span className="text-blue-400">AI</span>
-              </span>
+              <img src="/logo.png" alt="JanaAI Logo" className="h-10 md:h-12" />
             </button>
           </header>
 
@@ -937,12 +932,7 @@ export default function JanaAILanding() {
                 onClick={() => setShowQuestionnaire(false)}
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
-                  J
-                </div>
-                <span className="text-xl md:text-2xl font-bold tracking-tight">
-                  Jana<span className="text-blue-400">AI</span>
-                </span>
+                <img src="/logo.png" alt="JanaAI Logo" className="h-10 md:h-12" />
               </button>
               <button 
                 onClick={() => setShowQuestionnaire(false)}
@@ -1100,13 +1090,8 @@ export default function JanaAILanding() {
       <div className="relative z-10">
         <header className="container mx-auto px-4 py-6 md:py-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
-                J
-              </div>
-              <span className="text-xl md:text-2xl font-bold tracking-tight">
-                Jana<span className="text-blue-400">AI</span>
-              </span>
+            <div className="flex items-center">
+              <img src="/logo.png" alt="JanaAI Logo" className="h-12 md:h-16" />
             </div>
             <div className="flex flex-col items-end">
               <div className="px-4 py-2 bg-blue-500/20 border border-blue-400/30 rounded-full text-sm text-blue-300">
@@ -1424,13 +1409,8 @@ export default function JanaAILanding() {
         <footer className="container mx-auto px-4 py-12 border-t border-slate-800">
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold">
-                  J
-                </div>
-                <span className="text-lg font-bold">
-                  Jana<span className="text-blue-400">AI</span>
-                </span>
+              <div className="flex items-center">
+                <img src="/logo.png" alt="JanaAI Logo" className="h-8" />
               </div>
 
               <div className="flex items-center gap-6">
