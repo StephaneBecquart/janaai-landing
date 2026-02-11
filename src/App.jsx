@@ -362,6 +362,215 @@ export default function JanaAILanding() {
     calculateResultsFromAnswers(sampleAnswers);
   };
 
+  const sendToGoogleSheets = async (answersData, finalScore) => {
+    // Get score band
+    const scoreBand = getScoreBand(finalScore);
+    
+    // Get top 3 opportunities with full details
+    const opportunities = getTopOpportunitiesFromAnswers(answersData);
+    
+    // Prepare complete data payload
+    const payload = {
+      // Results
+      aiScore: finalScore,
+      scoreBand: scoreBand.level,
+      
+      // Top 3 Opportunities (full details for future PDF generation)
+      opportunity1: opportunities[0] ? {
+        title: opportunities[0].title,
+        impact: opportunities[0].impact,
+        timeframe: opportunities[0].timeframe,
+        description: opportunities[0].description,
+        subScore: opportunities[0].subScore
+      } : null,
+      opportunity2: opportunities[1] ? {
+        title: opportunities[1].title,
+        impact: opportunities[1].impact,
+        timeframe: opportunities[1].timeframe,
+        description: opportunities[1].description,
+        subScore: opportunities[1].subScore
+      } : null,
+      opportunity3: opportunities[2] ? {
+        title: opportunities[2].title,
+        impact: opportunities[2].impact,
+        timeframe: opportunities[2].timeframe,
+        description: opportunities[2].description,
+        subScore: opportunities[2].subScore
+      } : null,
+      
+      // Top opportunity title only (for CRM)
+      topOpportunity: opportunities[0] ? opportunities[0].title : '',
+      
+      // All 26 Question Answers
+      q1: answersData[1] || '',
+      q2: answersData[2] || '',
+      q3: answersData[3] || '',
+      q4: answersData[4] || '',
+      q5: answersData[5] || '',
+      q6: answersData[6] || '',
+      q7: answersData[7] || '',
+      q8: answersData[8] || '',
+      q9: answersData[9] || '',
+      q10: answersData[10] || '',
+      q11: answersData[11] || '',
+      q12: answersData[12] || '',
+      q13: answersData[13] || '',
+      q14: answersData[14] || '',
+      q15: answersData[15] || '',
+      q16: answersData[16] || '',
+      q17: answersData[17] || '',
+      q18: answersData[18] || '',
+      q19: answersData[19] || '',
+      q20: answersData[20] || '',
+      q21: answersData[21] || '',
+      q22: answersData[22] || '',
+      q23: answersData[23] || '',
+      q24: answersData[24] || '',
+      q25: answersData[25] || '',
+      q26: answersData[26] || '',
+      
+      // Business Profile (extracted for convenience)
+      organization: answersData[19] || '',
+      country: answersData[20] || '',
+      industry: answersData[21] || '',
+      employees: answersData[22] || '',
+      revenue: answersData[23] || '',
+      firstName: answersData[24] || '',
+      lastName: answersData[25] || '',
+      email: answersData[26] || ''
+    };
+    
+    try {
+      const response = await fetch('https://script.google.com/macros/s/AKfycbybWkU2NRVQBDgfDdcFoX927Tab3LvecGh25O0rcRLmAKQBt1wG0Vz5swQLDkLs6BNN/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      // Note: no-cors mode means we can't read the response, but the data is sent
+      console.log('Data sent to Google Sheets');
+    } catch (error) {
+      console.error('Error sending to Google Sheets:', error);
+      // Don't show error to user - results page still displays
+    }
+  };
+
+  const getTopOpportunitiesFromAnswers = (answersData) => {
+    // Same logic as getTopOpportunities but uses answersData parameter
+    if (!answersData || Object.keys(answersData).length === 0) {
+      return [];
+    }
+    
+    const allOpportunities = [
+      {
+        id: 1,
+        title: "Automated Data Entry & Integration",
+        impact: "High",
+        timeframe: "2-4 weeks",
+        description: "Eliminate manual data entry and copy-paste workflows with intelligent automation and system integrations.",
+        subScore: (() => {
+          let score = 0;
+          const q5Map = { "Yes, daily": 15, "Yes, weekly": 10, "Occasionally": 5, "No": 0 };
+          score += q5Map[answersData[5]] || 0;
+          const q6Map = { "Yes, constantly": 15, "Yes, regularly": 10, "Sometimes": 5, "No": 0 };
+          score += q6Map[answersData[6]] || 0;
+          const q7Map = { "Yes, for most processes": 5, "Yes, for some processes": 3, "Rarely": 1, "No": 0 };
+          score += q7Map[answersData[7]] || 0;
+          return score;
+        })()
+      },
+      {
+        id: 2,
+        title: "AI-Powered Lead Management",
+        impact: "High",
+        timeframe: "3-6 weeks",
+        description: "Automate lead qualification, follow-ups, and nurturing to capture more revenue opportunities.",
+        subScore: (() => {
+          let score = 0;
+          const q11Map = { "More than 50%": 20, "25-50%": 15, "10-25%": 10, "Less than 10%": 5, "I don't know": 12 };
+          score += q11Map[answersData[11]] || 0;
+          const q10Text = (answersData[10] || "").toLowerCase();
+          if (q10Text.includes("spreadsheet") || q10Text.includes("excel") || q10Text.includes("manual")) score += 10;
+          else if (q10Text.includes("email")) score += 5;
+          else if (q10Text.includes("crm") || q10Text.includes("automated")) score += 2;
+          const q13Map = { "More than 3 months": 10, "1-3 months": 7, "2-4 weeks": 4, "1-2 weeks": 2, "Less than 1 week": 0 };
+          score += q13Map[answersData[13]] || 0;
+          return score;
+        })()
+      },
+      {
+        id: 3,
+        title: "AI Knowledge Management System",
+        impact: "Medium-High",
+        timeframe: "4-6 weeks",
+        description: "Create an intelligent knowledge base that learns and provides instant answers to team questions.",
+        subScore: (() => {
+          let score = 0;
+          const q14Map = { 
+            "No, knowledge lives in people's heads": 15, 
+            "No, information is scattered": 15, 
+            "Yes, but it's outdated": 8, 
+            "Yes, and it's well-maintained": 0 
+          };
+          score += q14Map[answersData[14]] || 0;
+          const q15Map = { "Daily": 10, "Weekly": 7, "Monthly": 4, "Rarely": 0 };
+          score += q15Map[answersData[15]] || 0;
+          const q16Text = answersData[16] || "";
+          if (q16Text.length > 100) score += 5;
+          else if (q16Text.length > 50) score += 3;
+          else if (q16Text.length > 20) score += 1;
+          return score;
+        })()
+      },
+      {
+        id: 4,
+        title: "Administrative Task Automation",
+        impact: "High",
+        timeframe: "2-3 weeks",
+        description: "Free your team from busywork with intelligent automation of routine administrative tasks.",
+        subScore: (() => {
+          let score = 0;
+          const q9Map = { "Over 75% admin": 20, "50-75% admin": 15, "25-50% admin": 10, "10-25% admin": 5 };
+          score += q9Map[answersData[9]] || 0;
+          const q4Map = { "More than 40 hours": 15, "20-40 hours": 12, "10-20 hours": 8, "5-10 hours": 4, "Less than 5 hours": 0 };
+          score += q4Map[answersData[4]] || 0;
+          const q8Map = { "More than 10": 5, "7-10": 3, "4-6": 1, "1-3": 0 };
+          score += q8Map[answersData[8]] || 0;
+          return score;
+        })()
+      },
+      {
+        id: 5,
+        title: "Sales Process Acceleration",
+        impact: "High",
+        timeframe: "4-8 weeks",
+        description: "Compress your sales cycle with automated document generation, approvals, and communications.",
+        subScore: (() => {
+          let score = 0;
+          const q13Map = { "More than 3 months": 20, "1-3 months": 15, "2-4 weeks": 10, "1-2 weeks": 5, "Less than 1 week": 0 };
+          score += q13Map[answersData[13]] || 0;
+          const q12Text = answersData[12] || "";
+          if (q12Text.length > 100) score += 10;
+          else if (q12Text.length > 50) score += 7;
+          else if (q12Text.length > 20) score += 4;
+          const q11Map = { "More than 50%": 5, "25-50%": 3, "10-25%": 1, "I don't know": 1, "Less than 10%": 0 };
+          score += q11Map[answersData[11]] || 0;
+          return score;
+        })()
+      }
+    ];
+    
+    const sorted = allOpportunities.sort((a, b) => {
+      if (b.subScore !== a.subScore) return b.subScore - a.subScore;
+      return a.id - b.id;
+    });
+    
+    return sorted.slice(0, 3);
+  };
+
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({
       ...prev,
@@ -586,7 +795,206 @@ export default function JanaAILanding() {
     
     setAiScore(finalScore);
     setShowResults(true);
+    
+    // Send data to Google Sheets
+    sendToGoogleSheets(answersData, finalScore);
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const sendToGoogleSheets = async (answersData, calculatedScore) => {
+    try {
+      // Get top 3 opportunities with full details
+      const opportunities = getTopOpportunitiesForSheet(answersData);
+      
+      // Get score band
+      const scoreBand = getScoreBand(calculatedScore);
+      
+      // Prepare comprehensive data payload
+      const payload = {
+        // Calculated Results
+        aiScore: calculatedScore,
+        scoreBand: scoreBand.level,
+        
+        // Top 3 Opportunities (full details)
+        opportunity1: opportunities[0] || null,
+        opportunity2: opportunities[1] || null,
+        opportunity3: opportunities[2] || null,
+        
+        // All 26 Question Answers
+        q1: answersData[1] || '',
+        q2: answersData[2] || '',
+        q3: answersData[3] || '',
+        q4: answersData[4] || '',
+        q5: answersData[5] || '',
+        q6: answersData[6] || '',
+        q7: answersData[7] || '',
+        q8: answersData[8] || '',
+        q9: answersData[9] || '',
+        q10: answersData[10] || '',
+        q11: answersData[11] || '',
+        q12: answersData[12] || '',
+        q13: answersData[13] || '',
+        q14: answersData[14] || '',
+        q15: answersData[15] || '',
+        q16: answersData[16] || '',
+        q17: answersData[17] || '',
+        q18: answersData[18] || '',
+        q19: answersData[19] || '',
+        q20: answersData[20] || '',
+        q21: answersData[21] || '',
+        q22: answersData[22] || '',
+        q23: answersData[23] || '',
+        q24: answersData[24] || '',
+        q25: answersData[25] || '',
+        q26: answersData[26] || '',
+        
+        // Business Profile (extracted for convenience)
+        organization: answersData[19] || '',
+        country: answersData[20] || '',
+        industry: answersData[21] || '',
+        employees: answersData[22] || '',
+        revenue: answersData[23] || '',
+        firstName: answersData[24] || '',
+        lastName: answersData[25] || '',
+        email: answersData[26] || '',
+        
+        // Top opportunity title only (for CRM column)
+        topOpportunity: opportunities[0]?.title || ''
+      };
+      
+      // Send to Google Apps Script
+      const response = await fetch('https://script.google.com/macros/s/AKfycbybWkU2NRVQBDgfDdcFoX927Tab3LvecGh25O0rcRLmAKQBt1wG0Vz5swQLDkLs6BNN/exec', {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      // Note: no-cors mode doesn't allow reading response, but data is sent
+      console.log('Data sent to Google Sheets');
+      
+    } catch (error) {
+      console.error('Error sending to Google Sheets:', error);
+      // Don't show error to user - results page still displays normally
+    }
+  };
+
+  const getTopOpportunitiesForSheet = (answersData) => {
+    // Safety check
+    if (!answersData || Object.keys(answersData).length === 0) {
+      return [];
+    }
+    
+    // Calculate opportunities with sub-scores (same logic as getTopOpportunities)
+    const allOpportunities = [
+      {
+        id: 1,
+        title: "Automated Data Entry & Integration",
+        impact: "High",
+        timeframe: "2-4 weeks",
+        description: "Eliminate manual data entry and copy-paste workflows with intelligent automation and system integrations.",
+        subScore: (() => {
+          let score = 0;
+          const q5Map = { "Yes, daily": 15, "Yes, weekly": 10, "Occasionally": 5, "No": 0 };
+          score += q5Map[answersData[5]] || 0;
+          const q6Map = { "Yes, constantly": 15, "Yes, regularly": 10, "Sometimes": 5, "No": 0 };
+          score += q6Map[answersData[6]] || 0;
+          const q7Map = { "Yes, for most processes": 5, "Yes, for some processes": 3, "Rarely": 1, "No": 0 };
+          score += q7Map[answersData[7]] || 0;
+          return score;
+        })()
+      },
+      {
+        id: 2,
+        title: "AI-Powered Lead Management",
+        impact: "High",
+        timeframe: "3-6 weeks",
+        description: "Automate lead qualification, follow-ups, and nurturing to capture more revenue opportunities.",
+        subScore: (() => {
+          let score = 0;
+          const q11Map = { "More than 50%": 20, "25-50%": 15, "10-25%": 10, "Less than 10%": 5, "I don't know": 12 };
+          score += q11Map[answersData[11]] || 0;
+          const q10Text = (answersData[10] || "").toLowerCase();
+          if (q10Text.includes("spreadsheet") || q10Text.includes("excel") || q10Text.includes("manual")) score += 10;
+          else if (q10Text.includes("email")) score += 5;
+          else if (q10Text.includes("crm") || q10Text.includes("automated")) score += 2;
+          const q13Map = { "More than 3 months": 10, "1-3 months": 7, "2-4 weeks": 4, "1-2 weeks": 2, "Less than 1 week": 0 };
+          score += q13Map[answersData[13]] || 0;
+          return score;
+        })()
+      },
+      {
+        id: 3,
+        title: "AI Knowledge Management System",
+        impact: "Medium-High",
+        timeframe: "4-6 weeks",
+        description: "Create an intelligent knowledge base that learns and provides instant answers to team questions.",
+        subScore: (() => {
+          let score = 0;
+          const q14Map = { 
+            "No, knowledge lives in people's heads": 15, 
+            "No, information is scattered": 15, 
+            "Yes, but it's outdated": 8, 
+            "Yes, and it's well-maintained": 0 
+          };
+          score += q14Map[answersData[14]] || 0;
+          const q15Map = { "Daily": 10, "Weekly": 7, "Monthly": 4, "Rarely": 0 };
+          score += q15Map[answersData[15]] || 0;
+          const q16Text = answersData[16] || "";
+          if (q16Text.length > 100) score += 5;
+          else if (q16Text.length > 50) score += 3;
+          else if (q16Text.length > 20) score += 1;
+          return score;
+        })()
+      },
+      {
+        id: 4,
+        title: "Administrative Task Automation",
+        impact: "High",
+        timeframe: "2-3 weeks",
+        description: "Free your team from busywork with intelligent automation of routine administrative tasks.",
+        subScore: (() => {
+          let score = 0;
+          const q9Map = { "Over 75% admin": 20, "50-75% admin": 15, "25-50% admin": 10, "10-25% admin": 5 };
+          score += q9Map[answersData[9]] || 0;
+          const q4Map = { "More than 40 hours": 15, "20-40 hours": 12, "10-20 hours": 8, "5-10 hours": 4, "Less than 5 hours": 0 };
+          score += q4Map[answersData[4]] || 0;
+          const q8Map = { "More than 10": 5, "7-10": 3, "4-6": 1, "1-3": 0 };
+          score += q8Map[answersData[8]] || 0;
+          return score;
+        })()
+      },
+      {
+        id: 5,
+        title: "Sales Process Acceleration",
+        impact: "High",
+        timeframe: "4-8 weeks",
+        description: "Compress your sales cycle with automated document generation, approvals, and communications.",
+        subScore: (() => {
+          let score = 0;
+          const q13Map = { "More than 3 months": 20, "1-3 months": 15, "2-4 weeks": 10, "1-2 weeks": 5, "Less than 1 week": 0 };
+          score += q13Map[answersData[13]] || 0;
+          const q12Text = answersData[12] || "";
+          if (q12Text.length > 100) score += 10;
+          else if (q12Text.length > 50) score += 7;
+          else if (q12Text.length > 20) score += 4;
+          const q11Map = { "More than 50%": 5, "25-50%": 3, "10-25%": 1, "I don't know": 1, "Less than 10%": 0 };
+          score += q11Map[answersData[11]] || 0;
+          return score;
+        })()
+      }
+    ];
+    
+    // Sort and return top 3
+    const sorted = allOpportunities.sort((a, b) => {
+      if (b.subScore !== a.subScore) return b.subScore - a.subScore;
+      return a.id - b.id;
+    });
+    
+    return sorted.slice(0, 3);
   };
 
   const calculateResults = () => {
@@ -778,7 +1186,12 @@ export default function JanaAILanding() {
               }}
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
             >
-              <img src="/logo.png" alt="JanaAI Logo" className="h-16 md:h-24 lg:h-28" />
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
+                J
+              </div>
+              <span className="text-xl md:text-2xl font-bold tracking-tight">
+                Jana<span className="text-blue-400">AI</span>
+              </span>
             </button>
           </header>
 
@@ -932,7 +1345,12 @@ export default function JanaAILanding() {
                 onClick={() => setShowQuestionnaire(false)}
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity cursor-pointer"
               >
-                <img src="/logo.png" alt="JanaAI Logo" className="h-16 md:h-24 lg:h-28" />
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
+                  J
+                </div>
+                <span className="text-xl md:text-2xl font-bold tracking-tight">
+                  Jana<span className="text-blue-400">AI</span>
+                </span>
               </button>
               <button 
                 onClick={() => setShowQuestionnaire(false)}
@@ -1090,8 +1508,13 @@ export default function JanaAILanding() {
       <div className="relative z-10">
         <header className="container mx-auto px-4 py-6 md:py-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <img src="/logo.png" alt="JanaAI Logo" className="h-20 md:h-32 lg:h-40" />
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-lg">
+                J
+              </div>
+              <span className="text-xl md:text-2xl font-bold tracking-tight">
+                Jana<span className="text-blue-400">AI</span>
+              </span>
             </div>
             <div className="flex flex-col items-end">
               <div className="px-4 py-2 bg-blue-500/20 border border-blue-400/30 rounded-full text-sm text-blue-300">
@@ -1409,8 +1832,13 @@ export default function JanaAILanding() {
         <footer className="container mx-auto px-4 py-12 border-t border-slate-800">
           <div className="max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
-              <div className="flex items-center">
-                <img src="/logo.png" alt="JanaAI Logo" className="h-14 md:h-20" />
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold">
+                  J
+                </div>
+                <span className="text-lg font-bold">
+                  Jana<span className="text-blue-400">AI</span>
+                </span>
               </div>
 
               <div className="flex items-center gap-6">
